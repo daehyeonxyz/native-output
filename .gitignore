@@ -1,4 +1,7 @@
 # 개인 데이터는 커밋하지 않는다. 직접 쓴 글과 그 측정 결과다.
-data/corpus/
-data/fingerprint/
-data/holdout.md
+personal/corpus/
+personal/fingerprint/
+personal/packs/
+personal/holdout.md
+
+__pycache__/

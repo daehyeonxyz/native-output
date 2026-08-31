@@ -1,9 +1,9 @@
 # native-output — 지문 산출기 (fingerprint builder)
-# data/corpus/<장르>/*.txt 를 형태소 분석해 장르별 문체 지문을 산출한다.
-# 원칙: 지문의 모든 수치는 이 스크립트가 만든다(손수치 0). data/fingerprint/ 는 재생성 전용.
-# holdout(data/holdout.md 에 등재된 파일)은 지문 계산에서 제외한다.
+# personal/corpus/<장르>/*.txt 를 형태소 분석해 장르별 문체 지문을 산출한다.
+# 원칙: 지문의 모든 수치는 이 스크립트가 만든다(손수치 0). personal/fingerprint/ 는 재생성 전용.
+# holdout(personal/holdout.md 에 등재된 파일)은 지문 계산에서 제외한다.
 # 의존성: pip install kiwipiepy
-# 실행: PYTHONIOENCODING=utf-8 python scripts/build-fingerprint.py
+# 실행: PYTHONIOENCODING=utf-8 python install/scripts/build-fingerprint.py
 import json, re, sys, statistics
 from pathlib import Path
 from collections import Counter
@@ -13,10 +13,10 @@ try:
 except ImportError:
     sys.exit("kiwipiepy 가 필요하다. 설치: pip install kiwipiepy")
 
-DATA = Path(__file__).resolve().parent.parent / "data"
-CORPUS = DATA / "corpus"
-OUT = DATA / "fingerprint"
-HOLDOUT_FILE = DATA / "holdout.md"
+PERSONAL = Path(__file__).resolve().parents[2] / "personal"
+CORPUS = PERSONAL / "corpus"
+OUT = PERSONAL / "fingerprint"
+HOLDOUT_FILE = PERSONAL / "holdout.md"
 
 # AI 초안에 흔하지만 개인 코퍼스에는 없을 수 있는 상투 표현 후보 (never-use 판별용 탐침).
 # 이 목록 자체는 수치가 아니라 탐침이며, 판별 결과(0회 여부)는 스크립트가 계산한다.

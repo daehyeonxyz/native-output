@@ -2,7 +2,7 @@
 /**
  * 턴이 끝날 때 마지막 대화 응답을 금지 표현 목록과 대조한다.
  *
- * Stop 훅이다. 목록의 단일 원본은 data/packs/banned-words.json 으로,
+ * Stop 훅이다. 목록의 단일 원본은 standards/banned-words.json 으로,
  * Write·Edit 를 검사하는 native-output-gate.js 와 같은 목록을 쓴다.
  * 산출물만이 아니라 대화 응답에서도 측정으로 확정한 금지 표현을 막기 위해서다.
  *
@@ -19,7 +19,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const BANNED_LIST = path.join(__dirname, '..', 'data', 'packs', 'banned-words.json');
+const BANNED_LIST = path.join(__dirname, '..', '..', 'standards', 'banned-words.json');
 
 function pass() {
   process.exit(0);

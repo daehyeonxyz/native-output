@@ -1,7 +1,7 @@
 # native-output — holdout 평가: 봉인 글이 지문 범위 안에 드는지 검사한다.
 # 통과 의미: 지문이 "본 적 없는 본인 글"에도 맞는다 = 과적합이 아니라 일반화된 지문이다.
 # 의존성: pip install kiwipiepy
-# 실행: PYTHONIOENCODING=utf-8 python scripts/eval-holdout.py
+# 실행: PYTHONIOENCODING=utf-8 python install/scripts/eval-holdout.py
 import json, re, sys, statistics
 from pathlib import Path
 
@@ -10,9 +10,9 @@ try:
 except ImportError:
     sys.exit("kiwipiepy 가 필요하다. 설치: pip install kiwipiepy")
 
-DATA = Path(__file__).resolve().parent.parent / "data"
-FP = DATA / "fingerprint"
-HOLDOUT_FILE = DATA / "holdout.md"
+PERSONAL = Path(__file__).resolve().parents[2] / "personal"
+FP = PERSONAL / "fingerprint"
+HOLDOUT_FILE = PERSONAL / "holdout.md"
 
 TOL = {"sent_len_median": 0.5, "comma_median_abs": 1.0, "register_top_abs": 0.25}
 
@@ -44,7 +44,7 @@ def main():
         fp = json.loads(fp_file.read_text(encoding="utf-8"))
         texts = []
         for n in names:
-            p = DATA / "corpus" / genre / n
+            p = PERSONAL / "corpus" / genre / n
             if p.exists():
                 raw = p.read_text(encoding="utf-8", errors="replace")
                 texts.append(_prose_only(raw))

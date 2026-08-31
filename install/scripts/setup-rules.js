@@ -9,7 +9,7 @@
  * 여러 번 실행해도 같은 결과가 나온다. 설치본이 이미 있고 내용이 다르면
  * (사용자가 고쳐 쓴 경우) 덮어쓰지 않고 보고만 한다.
  *
- * 실행: node scripts/setup-rules.js
+ * 실행: node install/scripts/setup-rules.js
  */
 
 const fs = require('node:fs');

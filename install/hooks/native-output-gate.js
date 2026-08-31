@@ -11,7 +11,7 @@
  *   - 스크립트가 어떤 이유로든 실패하면 통과시킨다
  *
  * 마커 검사에 더해 금지 표현을 결정론으로 검사한다. 목록의 단일 원본은
- * 스킬 폴더의 data/packs/banned-words.json 이다. 스킬을 불렀어도 목록의 말이
+ * 스킬 폴더의 standards/banned-words.json 이다. 스킬을 불렀어도 목록의 말이
  * 들어 있으면 거부한다. 스킬 호출이 표현 준수를 보장하지 않는다.
  * 스킬 폴더 자신은 금지 표현을 인용으로 담으므로 이 검사에서 뺀다.
  *
@@ -26,7 +26,7 @@ const os = require('node:os');
 
 const DIR = path.join(os.homedir(), '.claude', '.native-output-loaded');
 const MARKER_FRESH_MS = 60 * 60 * 1000;
-const BANNED_LIST = path.join(__dirname, '..', 'data', 'packs', 'banned-words.json');
+const BANNED_LIST = path.join(__dirname, '..', '..', 'standards', 'banned-words.json');
 
 const TEXT_EXT = /\.(md|txt|ts|tsx|js|jsx|mjs|cjs|rs|py|toml|css|html|json|ya?ml)$/i;
 const SKIP = /(node_modules|[\\/]vendor[\\/]|[\\/]_archive[\\/]|[\\/]target[\\/]|[\\/]dist[\\/]|[\\/]build[\\/]|[\\/]\.git[\\/]|CHANGELOG|package-lock|pnpm-lock)/i;
@@ -104,7 +104,7 @@ function main() {
           '',
           ...lines,
           '',
-          '해당 문장을 실사용 어휘로 다시 쓰세요. 목록은 native-output 의 data/packs/banned-words.json 입니다.',
+          '해당 문장을 실사용 어휘로 다시 쓰세요. 목록은 native-output 의 standards/banned-words.json 입니다.',
           '인용 목적이면 NATIVE_OUTPUT_GATE=off 로 이 문을 엽니다.',
         ].join('\n'),
       );

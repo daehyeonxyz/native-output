@@ -5,83 +5,90 @@ description: AI가 쓰는 한국어를 자연스러운 한국어로 만들고, �
 
 # native-output — 한국어 출력 통제
 
-이 스킬은 AI 가 쓰는 한국어 출력을 통제한다. 동봉된 공용 팩이 판단과 문장과 글 구성과 표현의 기준을 정하고, 이 기준은 설치 직후부터 모든 한국어 산출물에 적용된다. 그 위에 개인화를 선택으로 얹을 수 있다. 사용자가 직접 쓴 글 모음(코퍼스)에서 지문(종결어미 분포, 문장 길이, 쉼표 밀도, 실측 0회 표현 목록)을 산출하면 장르 팩이 만들어지고, 도착 지점이 좋은 글의 평균이 아니라 사용자 본인의 문체가 된다. 지문 없이 동봉 기준만으로 쓰는 것도 완전한 정상 동작이다. 문체는 느낌이 아니라 측정값으로 다루고, 신규 작성이 기본 모드이며 고치기는 그 파생이다.
+이 스킬은 AI 가 쓰는 한국어 출력을 통제한다. `standards/` 의 기준이 판단과 문장과 글 구성과 표현을 정하고, 이 기준은 설치 직후부터 모든 한국어 산출물에 적용된다. 그 위에 개인화를 선택으로 얹을 수 있다. 사용자가 직접 쓴 글 모음(코퍼스)에서 지문(종결어미 분포, 문장 길이, 쉼표 밀도, 실측 0회 표현 목록)을 산출하면 장르 팩이 만들어지고, 도착 지점이 좋은 글의 평균이 아니라 사용자 본인의 문체가 된다. 지문 없이 동봉 기준만으로 쓰는 것도 완전한 정상 동작이다. 문체는 느낌이 아니라 측정값으로 다루고, 신규 작성이 기본 모드이며 고치기는 그 파생이다.
 
 트리거: "내 문체로", "내가 쓴 것처럼", "내 말투로 다듬어", "/native-output". 처음 설치한 뒤에는 "/native-output setup" 을 가장 먼저 실행한다.
+
+## 폴더 계약
+
+이 스킬은 `~/.claude/skills/native-output/` 에 설치된 상태를 전제한다. 훅과 스크립트의 경로가 전부 이 위치를 가리킨다. 폴더마다 역할이 하나씩이다.
+
+```text
+native-output/
+  README.md                      사람이 먼저 읽는 소개 문서
+  SKILL.md                       이 문서. 에이전트가 읽는 작업 지침
+
+  standards/                     글쓰기 기준. 지문 유무와 무관하게 항상 적용한다
+    README.md                    층이 겹치는 순서와 팀 표준으로 고치는 법
+    judgment.md                  판단 층. 무엇을 쓸지 먼저 정한다
+    korean.md                    문장 층. 번역투
+    discourse.md                 글 층. 시작과 전개와 호흡과 끝
+    style.md                     표현 층. 화계와 표기와 AI 상투 표현
+    genres.md                    장르 층. 지문 없이 쓸 때의 장르별 구조 (수치 없음)
+    dev-prose.md                 전용 층. 하네스 문서와 주석과 결정 기록과 명세
+    ui-copy.md                   전용 층. 앱과 웹의 화면 문구
+    slides.md                    전용 층. 슬라이드 텍스트와 대본
+    banned-words.json            훅이 결정론으로 검사하는 금지 표현 목록
+
+  guides/                        사람이 필요할 때 여는 절차 문서
+    setup.md                     설치와 강도 선택과 문제 해결
+    personalize.md               intake 부터 지문 구축까지의 절차
+    review.md                    독립 검수 브리프. 충실도 13항과 과윤문 신호와 판정표
+    measuring.md                 지문을 글에 적용할 때의 규율
+
+  install/                       설치되는 것들
+    rules/native-output.md       ~/.claude/rules/ 에 복사되는 전역 규칙. 세션마다 자동 로드된다
+    hooks/native-output-gate.js       PreToolUse(Write|Edit). 스킬 선호출과 금지 표현을 검사한다
+    hooks/native-output-mark.js       PostToolUse(Skill). 스킬이 로드되면 세션 마커를 남긴다
+    hooks/native-output-stop-gate.js  Stop. 마지막 대화 응답을 금지 표현 목록과 대조한다
+    scripts/setup-hooks.js       훅을 ~/.claude/settings.json 에 등록한다 (--level=block|warn|off)
+    scripts/setup-rules.js       전역 규칙을 ~/.claude/rules/ 에 설치한다 (재실행 안전)
+    scripts/build-fingerprint.py 코퍼스를 측정해 지문을 산출한다 (kiwipiepy 필요)
+    scripts/select-holdout.py    코퍼스의 약 14% 를 평가 전용으로 봉인한다 (결정론 선정)
+    scripts/eval-holdout.py      봉인 글이 지문 범위 안에 드는지 검사한다
+    scripts/check-integrity.py   장부와 실물을 대조하고 중복과 봉인 누출을 잡는다
+
+  personal/                      개인 데이터. 기본은 비어 있고 저장소에 올리지 않는다
+    README.md                    무엇이 들어오고 누가 만드는지
+    manifest.md                  편별 출처, AI 사용 여부 판정, 용도(학습/평가)
+    corpus/<장르>/<id>.txt       직접 쓴 글, 1편 1파일, 순수 텍스트
+    holdout.md                   select-holdout.py 가 생성하는 봉인 목록
+    fingerprint/<장르>.json      스크립트 산출 지문. 손으로 고치지 않고 재생성만 한다
+    packs/<장르>.md              지문 산출 후 생성. 수치는 지문 인용만
+```
 
 ## 층 구조
 
 층은 아래에서 위로 쌓이고, 위층이 아래층을 대체하지 않는다. 충돌하면 더 구체적인 층이 이긴다.
 
-| 층 | 파일 | 하는 일 |
+| 순서 | 층 | 파일 |
 |---|---|---|
-| 판단 | `data/packs/_judgment.md` | 무엇을 쓸지 정한다. 사전 질문 사슬과 근거 규율. 항상 먼저 |
-| 문장 | `data/packs/_korean.md` | 번역투를 걸러낸다 |
-| 글 | `data/packs/_discourse.md` | 시작과 전개와 호흡과 끝의 구성을 정한다 |
-| 표현 | `data/packs/_style.md` | 화계와 표기와 AI 상투 표현의 기본값 |
-| 장르 | `data/genre-defaults.md` 또는 `data/packs/<장르>.md` | 장르별 구조. 지문이 있으면 측정된 팩이 기본값을 대체한다 |
+| 1 | 판단 | `standards/judgment.md` — 무엇을 쓸지 정한다. 항상 먼저 |
+| 2 | 문장 | `standards/korean.md` |
+| 3 | 글 | `standards/discourse.md` |
+| 4 | 표현 | `standards/style.md` |
+| 5 | 장르 | `standards/genres.md`, 지문이 있으면 `personal/packs/<장르>.md` 가 대체한다 |
 
-특수 장르는 위 네 층 위에 전용 팩을 하나 더 겹친다.
+산문이 아닌 장르는 위에 전용 층을 하나 더 겹친다.
 
 | 장르 | 파일 |
 |---|---|
-| 개발 산문(하네스 문서, 주석, 결정 기록, 명세) | `data/packs/_dev-prose.md` |
-| 앱과 웹의 화면 문구 | `data/packs/_ui-copy.md` |
-| 발표 자료(슬라이드와 대본) | `data/packs/_slides.md` |
-
-## 폴더 계약
-
-이 스킬은 `~/.claude/skills/native-output/` 에 설치된 상태를 전제한다. 훅과 스크립트의 경로가 전부 이 위치를 가리킨다.
-
-```text
-native-output/
-  SKILL.md                       이 문서. 에이전트가 읽는 작업 지침
-  README.md                      사람이 읽는 소개 문서
-  rules/
-    native-output.md            ~/.claude/rules/ 에 설치되는 전역 규칙. 세션마다 자동 로드된다
-  hooks/
-    native-output-gate.js       PreToolUse(Write|Edit) 훅. 스킬 선호출과 금지 표현을 검사한다
-    native-output-mark.js       PostToolUse(Skill) 훅. 스킬이 로드되면 세션 마커를 남긴다
-    native-output-stop-gate.js  Stop 훅. 마지막 대화 응답을 금지 표현 목록과 대조한다
-  scripts/
-    setup-hooks.js               훅을 ~/.claude/settings.json 에 등록한다 (--level=block|warn|off)
-    setup-rules.js               전역 규칙을 ~/.claude/rules/ 에 설치한다 (재실행 안전)
-    build-fingerprint.py         코퍼스를 측정해 지문을 산출한다 (kiwipiepy 필요)
-    select-holdout.py            코퍼스의 약 14% 를 평가 전용으로 봉인한다 (결정론 선정)
-    eval-holdout.py              봉인 글이 지문 범위 안에 드는지 검사한다
-    check-integrity.py           장부와 실물을 대조하고 중복과 봉인 누출을 잡는다
-  reference/
-    review.md                    독립 검수 절차. 내용 충실도 13항과 과윤문 신호와 판정표
-    measuring.md                 지문을 글에 적용할 때의 규율. 지문이 없으면 필요 없다
-  data/
-    genre-defaults.md            동봉. 지문 없이 쓸 때의 장르별 구조 기준 (수치 없음)
-    manifest.md                  편별 출처, AI 사용 여부 판정, 용도(학습/평가)
-    packs/_judgment.md           동봉. 판단 층
-    packs/_korean.md             동봉. 문장 층
-    packs/_discourse.md          동봉. 글 층
-    packs/_style.md              동봉. 표현 층
-    packs/_dev-prose.md          동봉. 개발 산문 층
-    packs/_ui-copy.md            동봉. 화면 문구 층
-    packs/_slides.md             동봉. 발표 자료 층
-    packs/banned-words.json      동봉. 훅이 결정론으로 검사하는 금지 표현 목록
-    corpus/<장르>/<id>.txt       직접 쓴 글, 1편 1파일, 순수 텍스트 (개인화를 쓸 때만)
-    holdout.md                   select-holdout.py 가 생성하는 봉인 목록
-    fingerprint/<장르>.json      스크립트 산출 지문. 손으로 고치지 않고 재생성만 한다
-    packs/<장르>.md              지문 산출 후 생성. 장르별 재작성 지침, 수치는 지문 인용만
-```
+| 개발 산문(하네스 문서, 주석, 결정 기록, 명세) | `standards/dev-prose.md` |
+| 앱과 웹의 화면 문구 | `standards/ui-copy.md` |
+| 발표 자료(슬라이드와 대본) | `standards/slides.md` |
 
 ## 계약 (invariants)
 
-- **동봉 기준은 항상 적용한다.** 공용 팩(`_judgment`, `_korean`, `_discourse`, `_style`)은 지문 유무와 무관하게 모든 한국어 산출물에 적용하고, 장르에 따라 `_dev-prose` 나 `_ui-copy` 나 `_slides` 를 더한다.
+- **동봉 기준은 항상 적용한다.** `standards/` 의 다섯 층은 지문 유무와 무관하게 모든 한국어 산출물에 적용하고, 장르에 따라 전용 층을 더한다.
 - **판단 층이 먼저다.** 문장을 손질하기 전에 사전 질문 사슬로 목적과 독자와 내용을 정한다. 내용이 목적에 안 맞으면 재작성 전에 내용 비판을 먼저 보고한다.
 - **문체 근거의 우선순위는 고정이다**: ① 지문과 장르 팩(측정값) → ② 사용자가 이 세션에 준 본인 글 예시 → ③ 둘 다 없으면 동봉 기준만으로 쓴다. ③은 결함이 아니라 정상 동작이므로 따로 표시하지 않는다. 다만 사용자가 본인 문체를 요청했는데 지문이 없으면 그 사실을 밝히고, 근거 없이 "당신 문체입니다" 라고 단정하지 않는다.
 - **에이전트의 대화 말투는 이 스킬의 목표가 아니다.** 목표는 사용자 본인의 지문이다. 사용자 글이 반말 섞임이면 그것이 정답이다.
-- **팩은 필터가 아니라 기준이다.** 최종 판정은 그 문장이 자연스러운 한국어인가이지 금지 목록에 걸렸는가가 아니다. 규칙을 기계로 적용해 새 어색함을 만들지 않는다.
-- **코퍼스 순수성**: AI 의 도움을 받아 쓴 글은 코퍼스에 편입하지 않는다. 편입 판정 근거는 manifest 에 기록한다.
-- **손수치 0**: 지문의 모든 수치는 `scripts/build-fingerprint.py` 가 산출한다. 사람이나 모델이 임의로 적어 넣은 수치는 무효다.
-- **holdout 봉인**: `scripts/select-holdout.py` 가 봉인한 글은 팩 제작에 쓰지 않고 복제 품질 평가에만 쓴다.
+- **기준은 필터가 아니다.** 최종 판정은 그 문장이 자연스러운 한국어인가이지 금지 목록에 걸렸는가가 아니다. 규칙을 기계로 적용해 새 어색함을 만들지 않는다.
+- **코퍼스 순수성**: AI 의 도움을 받아 쓴 글은 코퍼스에 편입하지 않는다. 편입 판정 근거는 `personal/manifest.md` 에 기록한다.
+- **손수치 0**: 지문의 모든 수치는 `install/scripts/build-fingerprint.py` 가 산출한다. 사람이나 모델이 임의로 적어 넣은 수치는 무효다.
+- **holdout 봉인**: `install/scripts/select-holdout.py` 가 봉인한 글은 팩 제작에 쓰지 않고 복제 품질 평가에만 쓴다.
 - **수정은 직접 한다**: 문장 교정은 원문을 읽고 문장 단위로 직접 다시 쓴다. 일괄 치환 스크립트로 문장이나 기호를 고치지 않는다. 스크립트는 지문 산출과 검증 측정에만 쓴다.
-- **단일 통과**: 문체 검사를 여러 벌 겹치지 않는다. 지문이 없으면 동봉 기준 한 벌로 통과하고, 지문이 생기면 `_style.md` 의 기본 표현 목록을 실측 0회 목록으로 대체해 한 벌로 통과한다. 보편 상투어라도 사용자가 실제로 쓰는 표현이면 지우지 않는다.
+- **단일 통과**: 문체 검사를 여러 벌 겹치지 않는다. 지문이 없으면 동봉 기준 한 벌로 통과하고, 지문이 생기면 `standards/style.md` 의 기본 표현 목록을 실측 0회 목록으로 대체해 한 벌로 통과한다. 보편 상투어라도 사용자가 실제로 쓰는 표현이면 지우지 않는다.
 - **보존형 윤문은 특수 모드다.** 남의 글, 사실과 주장을 고정해야 하는 확정 원고, 사용자가 보존을 명시한 글에만 적용한다: 의미 불변 절대(사실, 주장, 수치, 인용, 순서 고정)에 변경률 5~30% 밴드를 더한다. 5% 미만은 덜 고친 것이고 30% 초과는 과윤문이므로 롤백을 검토한다. 이 계약을 다른 모드에 확대 적용하지 않는다.
 - **모드가 게이트를 정한다.** 작성과 유연한 고치기의 게이트는 목적 적합성(사전 질문 사슬 대비 내용과 형식 판정)이고, 변경 규모의 상한은 없다.
 
@@ -89,86 +96,56 @@ native-output/
 
 | 모드 | 하는 일 |
 |---|---|
-| setup | 최초 1회. 폴더 위치 확인, 의존성 설치, 훅 등록, 동작 검증까지 전부 진행한다 |
+| setup | 최초 1회. 폴더 위치 확인, 실행 환경 확인, 강도 선택, 훅 등록, 동작 검증 |
 | (기본) 작성 | 사전 질문 사슬로 내용을 설계하고, 초고를 지문으로 쓴다 |
 | 고치기 | 기존 글을 쓴 목적에 비춰 내용 비판부터 하고, 필요한 만큼 유연하게 고친다. 보존형 윤문 계약은 해당 조건에서만 적용한다 |
-| intake | 직접 쓴 글을 코퍼스에 편입한다 (출처 확인 → AI 사용 여부 판정 → manifest 기록 → holdout 봉인) |
-| fingerprint | `build-fingerprint.py` 를 실행해 지문을 재산출하고, 장르 팩의 수치 인용을 지문과 맞춘다 |
+| intake | 직접 쓴 글을 코퍼스에 편입한다. 절차는 `guides/personalize.md` |
+| fingerprint | 지문을 재산출하고 장르 팩의 수치 인용을 지문과 맞춘다 |
 | status | 코퍼스 규모, 지문 유무, 장르 팩 목록, 훅 등록 여부와 강도를 보고한다 |
 
 ## setup 절차 (최초 1회)
 
-에이전트가 아래를 순서대로 실행한다. 각 단계는 실패하면 멈추고 사용자에게 보고한다.
+사람이 읽는 안내는 `guides/setup.md` 에 있다. 에이전트는 아래를 순서대로 실행하고, 각 단계가 실패하면 멈추고 사용자에게 보고한다.
 
-1. **위치 확인**: 이 스킬 폴더가 `~/.claude/skills/native-output/` 에 있는지 확인한다. 다른 위치(바탕화면, 다운로드 폴더 등)에 있으면 폴더 전체를 그 경로로 복사하고, 이후 단계는 복사된 쪽에서 진행한다.
-2. **의존성 확인**: `node --version` 을 실행해 확인한다. node 가 없으면 훅을 등록할 수 없으므로 설치를 안내하고 4번을 건너뛴다. 개인화(지문 측정)를 쓸 사용자에게만 `python --version` 과 `pip install kiwipiepy` 를 안내한다. 개인화를 안 쓰면 파이썬은 필요하지 않다.
+1. **위치 확인**: 이 스킬 폴더가 `~/.claude/skills/native-output/` 에 있는지 확인한다. 다른 위치에 있으면 폴더 전체를 그 경로로 복사하고, 이후 단계는 복사된 쪽에서 진행한다.
+2. **실행 환경 확인**: `node --version` 을 실행한다. node 가 없으면 훅을 등록할 수 없으므로 설치를 안내하고 4번을 건너뛴다. 파이썬과 `pip install kiwipiepy` 는 개인화를 쓸 사용자에게만 안내한다. 개인화를 안 쓰면 파이썬은 필요하지 않다.
 3. **강도 선택**: 훅을 얼마나 세게 걸지 사용자에게 묻고 답을 받는다. 묻지 않고 정하지 않는다.
-   - `block`: 스킬을 안 부르고 한국어를 쓰거나 금지 표현이 들어가면 편집을 거부한다. 규칙을 확실히 강제하고 싶을 때 고른다.
    - `warn`: 막지 않고 알리기만 한다. **처음 써 보는 사용자에게 권한다.**
+   - `block`: 스킬을 안 부르고 한국어를 쓰거나 금지 표현이 들어가면 편집을 거부한다.
    - `off`: 훅을 걸지 않는다. 전역 규칙 층만으로 동작한다.
-4. **훅 등록**: `node scripts/setup-hooks.js --level=<선택>` 을 실행한다. 이 스크립트가 `~/.claude/settings.json` 을 백업한 뒤 PreToolUse(Write|Edit)에 gate 훅을, PostToolUse(Skill)에 mark 훅을, Stop 에 stop-gate 훅을 등록한다. 재실행하면 기존 등록을 지우고 새 강도로 다시 넣으므로 나중에 강도만 바꿔 다시 실행해도 된다.
-5. **전역 규칙 설치**: `node scripts/setup-rules.js` 를 실행한다. 동봉된 `rules/native-output.md` 가 `~/.claude/rules/` 에 복사되고, Claude Code 가 그 폴더의 md 파일을 세션마다 자동 로드한다. 설치본을 사용자가 고쳐 쓴 경우에는 덮어쓰지 않는다.
-6. **동작 검증**: 한국어 내용이 담긴 Write 입력 JSON 을 표준 입력으로 넣어 `node hooks/native-output-gate.js` 를 실행하고, 고른 강도에 맞는 응답(block 이면 deny, warn 이면 알림)이 나오는지 확인한다. 결과를 사용자에게 보여 준다.
-7. **완료 보고**: 훅과 규칙은 다음 세션부터 적용되므로 Claude Code 재시작을 안내한다. 설치만으로 동작이 완결되고, 본인 말투 개인화를 원하는 경우에만 intake(직접 쓴 글 편입)로 이어 가면 된다고 안내한다.
+4. **훅 등록**: `node install/scripts/setup-hooks.js --level=<선택>` 을 실행한다. 이 스크립트가 `~/.claude/settings.json` 을 백업한 뒤 훅 셋을 등록한다. 재실행하면 기존 등록을 지우고 새 강도로 다시 넣으므로 나중에 강도만 바꿔 다시 실행해도 되고, 다른 훅은 건드리지 않는다.
+5. **전역 규칙 설치**: `node install/scripts/setup-rules.js` 를 실행한다. `install/rules/native-output.md` 가 `~/.claude/rules/` 에 복사되고, Claude Code 가 그 폴더의 md 파일을 세션마다 자동 로드한다. 설치본을 사용자가 고쳐 쓴 경우에는 덮어쓰지 않는다.
+6. **동작 검증**: 한국어 내용이 담긴 Write 입력 JSON 을 표준 입력으로 넣어 `node install/hooks/native-output-gate.js` 를 실행하고, 고른 강도에 맞는 응답(block 이면 deny, warn 이면 알림)이 나오는지 확인한다. 결과를 사용자에게 보여 준다.
+7. **완료 보고**: 훅과 규칙은 다음 세션부터 적용되므로 Claude Code 재시작을 안내한다. 설치만으로 동작이 완결되고, 본인 말투 개인화를 원하는 경우에만 intake 로 이어 가면 된다고 안내한다.
 
 ## 절차 (작성과 고치기 공통)
 
-1. **사전 질문 → 장르 판정**: `_judgment.md` 의 사전 질문 사슬을 따른다. 왜 쓰는가 → 어디에 실리고 누가 읽는가 → 메시지 → 들어가야 할 내용(목적에 비춘 내용 비판: 빠진 것과 군더더기) → 형식. 장르는 이 사슬의 답에서 나오고, 장르별 구조 기준은 `data/genre-defaults.md` 가 갖는다.
-   - **새 장르 절차**: 코퍼스에도 `genre-defaults.md` 에도 없는 글 종류면 화계를 단정하지 않는다. 후보 화계별 근거를 정리해 사용자에게 제시하고, 선택을 받은 뒤 진행한다. 가장 가까운 장르로 대용했으면 대용 사실과 대용 장르를 산출물에 명시한다.
-2. **문체 재작성 (단일 통과, 층 적용)**: 위 층 구조대로 겹쳐 적용한다. 장르 팩(지문)이 있으면 그 위에 적용하되 `_style.md` 의 표현 목록은 지문의 실측 목록으로 대체하고, 층이 충돌하면 장르 팩의 수치가 이긴다. 지문이 없으면 동봉 기준만으로 쓰고 따로 밝히지 않는다. 사용자가 본인 문체를 요청한 경우에만 예시문으로 근사하고 지문이 없다는 사실을 명시한다.
-3. **게이트**: 의미 불변 자가 대조와 변경률 계산. 공개용이나 고위험 글이면 이 글을 처음 보는 별도 에이전트를 불러 검수한다. 검수 브리프는 `reference/review.md` 를 그대로 넘긴다.
+1. **사전 질문 → 장르 판정**: `standards/judgment.md` 의 사전 질문 사슬을 따른다. 왜 쓰는가 → 어디에 실리고 누가 읽는가 → 메시지 → 들어가야 할 내용(목적에 비춘 내용 비판: 빠진 것과 군더더기) → 형식. 장르는 이 사슬의 답에서 나오고, 장르별 구조 기준은 `standards/genres.md` 가 갖는다.
+   - **새 장르 절차**: 코퍼스에도 `standards/genres.md` 에도 없는 글 종류면 화계를 단정하지 않는다. 후보 화계별 근거를 정리해 사용자에게 제시하고, 선택을 받은 뒤 진행한다. 가장 가까운 장르로 대용했으면 대용 사실과 대용 장르를 산출물에 명시한다.
+2. **문체 재작성 (단일 통과, 층 적용)**: 위 층 구조대로 겹쳐 적용한다. 장르 팩(지문)이 있으면 그 위에 적용하되 `standards/style.md` 의 표현 목록은 지문의 실측 목록으로 대체하고, 층이 충돌하면 장르 팩의 수치가 이긴다. 지문이 없으면 동봉 기준만으로 쓰고 따로 밝히지 않는다. 사용자가 본인 문체를 요청한 경우에만 예시문으로 근사하고 지문이 없다는 사실을 명시한다.
+3. **게이트**: 의미 불변 자가 대조와 변경률 계산. 공개용이나 고위험 글이면 이 글을 처음 보는 별도 에이전트를 불러 검수한다. 검수 브리프는 `guides/review.md` 를 그대로 넘긴다.
 4. **반환**: 최종 글 + 변경률 + 문체 근거 등급(지문/예시/기본) 명시.
 
-## intake 와 지문 구축 절차 (선택)
+## intake 와 지문 구축 (선택)
 
-개인화는 선택 기능이다. 이 절차를 밟지 않아도 스킬은 동봉 기준으로 완전하게 동작한다.
+개인화는 선택 기능이다. 이 절차를 밟지 않아도 스킬은 `standards/` 만으로 완전하게 동작한다. 절차 전체는 `guides/personalize.md` 가 갖는다. 요약하면 이렇다.
 
 1. AI 없이 직접 쓴 글만 골라 받는다. 장르당 5편 이상이면 의미 있는 지문이 나온다.
-2. `data/corpus/<장르>/` 에 1편 1파일 순수 텍스트로 넣고, manifest 에 출처와 AI 사용 여부 판정을 기록한다.
-3. `python scripts/check-integrity.py` 로 장부와 실물과 중복을 점검한다.
-4. `python scripts/select-holdout.py` 로 평가 전용 봉인을 선정하고, 봉인된 글의 manifest 용도를 "평가" 로 바꾼다.
-5. `PYTHONIOENCODING=utf-8 python scripts/build-fingerprint.py` 로 지문을 산출한다. 봉인 글은 자동으로 제외된다.
-6. 장르 팩을 아래 템플릿으로 쓴다. 수치는 지문 인용만 적는다.
-7. `python scripts/eval-holdout.py` 로 지문이 봉인 글의 버릇(문장 길이, 쉼표, 화계)을 재현하는지 확인한다. 이탈이 나오면 코퍼스 오염이나 장르 혼입을 의심하고 원인을 보고한다.
+2. `personal/corpus/<장르>/` 에 넣고 `personal/manifest.md` 에 기록한다.
+3. `check-integrity.py` → `select-holdout.py` → `build-fingerprint.py` 순서로 실행한다.
+4. 지문을 인용해 `personal/packs/<장르>.md` 를 쓴다. 수치는 지문 인용만 적는다.
+5. `eval-holdout.py` 로 복제 품질을 확인한다. 이탈이 나오면 코퍼스 오염이나 장르 혼입을 의심하고 원인을 보고한다.
 
-지문을 글에 적용할 때 반복해서 걸리는 자리(문장 길이 조정 횟수, 강조 밀도, 대용 명시)는 `reference/measuring.md` 가 갖는다.
-
-## 산출물 템플릿
-
-manifest 의 행 형식은 다음과 같다.
-
-```markdown
-| id | 장르 | 출처 | 작성 시기 | AI 사용 | 용도(학습/평가) |
-```
-
-장르 팩의 골격은 다음과 같다.
-
-```markdown
-# pack: <장르> — <한 줄 설명>
-
-수치 출처: `fingerprint/<장르>.json` (측정일, 편수). 수치를 손으로 고치지 말 것. 재측정만.
-
-## 말투
-- 기본 화계와 비율. 예: 반말 평서 94%.
-- 상위 종결어미와 문장 버릇.
-
-## 리듬
-- 문장 길이 중앙값 <n>자.
-- 쉼표 중앙값 <n>개/문장.
-
-## 절대 안 쓰는 표현 (지문 실측 0회)
-- 목록을 직접 적거나 fingerprint 파일의 never_use_candidates 필드를 가리킨다.
-- 예외: probes_found 에 잡힌 상투어는 실사용이므로 금지어로 취급하지 않는다.
-```
+지문을 글에 적용할 때 반복해서 걸리는 자리는 `guides/measuring.md` 가 갖는다.
 
 ## 전역 배선 (규칙과 훅)
 
 스킬 호출이 규칙 준수를 보장하지 않으므로, 상주 규칙 한 층과 결정론 훅 세 겹을 전역에 배선한다.
 
-- `rules/native-output.md`: setup 이 `~/.claude/rules/` 에 설치하는 전역 규칙이다. 세션마다 자동 로드되어 한국어 출력 계약(동봉 기준 상시 적용, 측정 근거, 손수치 0)을 상주시킨다.
-- `hooks/native-output-gate.js`: 한글이 든 파일을 Write 나 Edit 로 쓰기 직전에 실행된다. 이 스킬을 60분 안에 불렀는지 마커로 확인하고, `data/packs/banned-words.json` 의 금지 표현이 들어 있으면 바른 표현을 제안한다.
-- `hooks/native-output-mark.js`: Skill 도구로 native-output 이 로드되면 세션 마커를 남긴다.
-- `hooks/native-output-stop-gate.js`: 턴이 끝날 때 마지막 대화 응답을 같은 금지 목록과 대조한다. 코드블록과 인용은 검사에서 뺀다.
-- 강도는 세 가지다. `block` 은 거부하고, `warn` 은 막지 않고 알리기만 하며, `off` 는 훅을 걸지 않는다. `node scripts/setup-hooks.js --level=<강도>` 로 언제든 바꾼다.
-- 금지 목록에는 오탐이 적은 형태만 담고, 항목은 사용자의 실제 반려가 관측될 때만 늘린다. 본인에게 맞지 않는 항목은 지운다.
+- `install/rules/native-output.md`: setup 이 `~/.claude/rules/` 에 설치하는 전역 규칙이다. 세션마다 자동 로드되어 한국어 출력 계약(동봉 기준 상시 적용, 측정 근거, 손수치 0)을 상주시킨다.
+- `install/hooks/native-output-gate.js`: 한글이 든 파일을 Write 나 Edit 로 쓰기 직전에 실행된다. 이 스킬을 60분 안에 불렀는지 마커로 확인하고, `standards/banned-words.json` 의 금지 표현이 들어 있으면 바른 표현을 제안한다.
+- `install/hooks/native-output-mark.js`: Skill 도구로 native-output 이 로드되면 세션 마커를 남긴다.
+- `install/hooks/native-output-stop-gate.js`: 턴이 끝날 때 마지막 대화 응답을 같은 금지 목록과 대조한다. 코드블록과 인용은 검사에서 뺀다.
+- 강도는 셋이다. `warn` 은 막지 않고 알리기만 하고, `block` 은 거부하며, `off` 는 훅을 걸지 않는다. `node install/scripts/setup-hooks.js --level=<강도>` 로 언제든 바꾼다.
+- 금지 목록에는 오탐이 적은 형태만 담고, 항목은 실제 반려가 관측될 때만 늘린다. 팀이나 본인에게 맞지 않는 항목은 지운다.
 - 남의 글이나 기계 생성물을 다룰 때는 환경 변수 `NATIVE_OUTPUT_GATE=off` 로 검사를 끈다.

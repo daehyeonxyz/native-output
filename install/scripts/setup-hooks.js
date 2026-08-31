@@ -13,7 +13,7 @@
  * 쓰기 전에 원본을 settings.json.native-output.bak 으로 백업한다.
  * 스킬 폴더가 ~/.claude/skills/native-output 에 있어야 훅 경로가 성립한다.
  *
- * 실행: node scripts/setup-hooks.js --level=warn
+ * 실행: node install/scripts/setup-hooks.js --level=warn
  */
 
 const fs = require('node:fs');
@@ -23,13 +23,13 @@ const os = require('node:os');
 const SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
 const SKILL_DIR = path.join(os.homedir(), '.claude', 'skills', 'native-output');
 
-const HOOK_BASE = '"$HOME/.claude/skills/native-output/hooks';
+const HOOK_BASE = '"$HOME/.claude/skills/native-output/install/hooks';
 const GATE = `${HOOK_BASE}/native-output-gate.js"`;
 const MARK = `${HOOK_BASE}/native-output-mark.js"`;
 const STOP = `${HOOK_BASE}/native-output-stop-gate.js"`;
 
 /* 이 문자열이 든 훅 명령은 native-output 의 것으로 본다. */
-const OWNED = 'skills/native-output/hooks/';
+const OWNED = 'skills/native-output/install/hooks/';
 
 const LEVELS = ['block', 'warn', 'off'];
 
@@ -82,7 +82,7 @@ function addHook(settings, event, matcher, command, statusMessage) {
 function main() {
   const level = readLevel();
 
-  if (!fs.existsSync(path.join(SKILL_DIR, 'hooks', 'native-output-gate.js'))) {
+  if (!fs.existsSync(path.join(SKILL_DIR, 'install', 'hooks', 'native-output-gate.js'))) {
     fail(`스킬 폴더가 ${SKILL_DIR} 에 없다. 폴더를 먼저 그 위치로 복사한 뒤 다시 실행할 것.`);
   }
 

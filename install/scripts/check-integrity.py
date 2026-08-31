@@ -1,13 +1,14 @@
 # native-output — 장부 무결성 검사 (manifest vs 실물, 중복, holdout 누출)
-# 실행: PYTHONIOENCODING=utf-8 python scripts/check-integrity.py
+# 실행: PYTHONIOENCODING=utf-8 python install/scripts/check-integrity.py
 import hashlib, re, sys
 from pathlib import Path
 
-DATA = Path(__file__).resolve().parent.parent / "data"
-CORPUS = DATA / "corpus"
-MANIFEST = DATA / "manifest.md"
-HOLDOUT = DATA / "holdout.md"
-PACKS = DATA / "packs"
+ROOT = Path(__file__).resolve().parents[2]
+PERSONAL = ROOT / "personal"
+CORPUS = PERSONAL / "corpus"
+MANIFEST = PERSONAL / "manifest.md"
+HOLDOUT = PERSONAL / "holdout.md"
+PACKS = PERSONAL / "packs"
 
 
 def main():
@@ -16,7 +17,7 @@ def main():
         return 0
 
     problems = []
-    disk = {p.relative_to(DATA).as_posix(): p for p in CORPUS.rglob("*.txt")}
+    disk = {p.relative_to(PERSONAL).as_posix(): p for p in CORPUS.rglob("*.txt")}
 
     # 1) 장부 등재 vs 실물 — 파일명(basename) 기준으로 대조한다
     listed = set()
