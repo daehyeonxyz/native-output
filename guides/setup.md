@@ -24,7 +24,7 @@ Claude Code 에서 이렇게 입력합니다.
 에이전트가 순서대로 진행합니다.
 
 1. 폴더가 올바른 자리에 있는지 확인합니다.
-2. `node --version` 으로 실행 환경을 확인합니다. **node 만 있으면 됩니다.** 파이썬은 개인화를 쓸 때만 필요합니다.
+2. `node --version` 으로 실행 환경을 확인합니다. **node 만 있으면 됩니다.**
 3. 자동 검사 강도를 물어봅니다. 아래에서 고릅니다.
 4. 훅을 `~/.claude/settings.json` 에 등록합니다. 기존 설정은 `settings.json.native-output.bak` 으로 백업됩니다.
 5. 전역 규칙을 `~/.claude/rules/` 에 설치합니다. Claude Code 가 세션마다 자동으로 읽는 자리입니다.
@@ -48,7 +48,9 @@ node ~/.claude/skills/native-output/install/scripts/setup-hooks.js --level=warn
 
 ## 설치를 확인하는 법
 
-Claude Code 에서 `/native-output status` 라고 입력하면 훅 등록 여부와 강도, 개인화 상태를 보고합니다.
+Claude Code 에서 `/native-output status` 라고 입력하면 훅 등록 여부와 강도, 규칙 설치 여부를 보고합니다.
+
+설치한 뒤에는 따로 할 일이 없습니다. 한국어 글을 쓰는 작업이면 스킬을 부르지 않아도 적용됩니다.
 
 ## 잠시 끄고 싶을 때
 
