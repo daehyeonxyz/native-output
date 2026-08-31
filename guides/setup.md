@@ -1,16 +1,6 @@
 # 설치 안내
 
-## Claude 앱 (chat) — 주 사용처
-
-1. 이 폴더를 zip 으로 묶는다. 배포받은 zip 그대로면 된다.
-2. claude.ai 설정 → 기능(Capabilities) → 스킬에서 zip 을 올린다.
-3. 끝이다. 한국어 글을 쓰는 대화에서 자동으로 적용된다.
-
-Claude 앱에는 훅이 없으므로 아래 절차는 해당하지 않는다. SKILL.md 와 standards/ 문서가 기준의 전부다.
-
-## Claude Code
-
-설치는 두 단계다.
+## 설치
 
 ### 1. 폴더를 스킬 자리에 둔다
 
@@ -21,9 +11,7 @@ Claude 앱에는 훅이 없으므로 아래 절차는 해당하지 않는다. SK
 | macOS, Linux | `~/.claude/skills/native-output/` |
 | Windows | `%USERPROFILE%\.claude\skills\native-output\` |
 
-옮기기가 번거로우면 Claude Code 에 압축을 푼 폴더를 알려 주고 "이 폴더를 스킬 폴더로 옮겨 줘" 라고 부탁해도 된다.
-
-### 2. setup 을 실행한다
+### 2. setup 실행
 
 ```text
 /native-output setup
@@ -38,7 +26,7 @@ Claude 앱에는 훅이 없으므로 아래 절차는 해당하지 않는다. SK
 5. 전역 규칙을 `~/.claude/rules/` 에 설치한다. Claude Code 가 세션마다 자동으로 읽는 자리다.
 6. 훅이 실제로 동작하는지 검증하고 결과를 보여 준다.
 
-끝나면 Claude Code 를 한 번 재시작한다. 훅과 규칙은 다음 세션부터 적용된다.
+완료 후 Claude Code 를 재시작한다. 훅과 규칙은 다음 세션부터 적용된다.
 
 ## 검사 강도
 

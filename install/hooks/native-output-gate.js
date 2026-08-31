@@ -130,7 +130,7 @@ function main() {
     '',
     `한글 ${hangul}자 · ${path.basename(file)}`,
     '',
-    'Skill 도구로 native-output 을 부르고 이 글의 장르 기준을 읽은 뒤에 쓰세요.',
+    'Skill 도구로 native-output 을 부르고 이 글의 종류에 맞는 기준을 읽은 뒤에 쓰세요.',
     '사용자가 부르지 않아도 한국어를 쓸 때는 먼저 부릅니다.',
     '마커는 마지막 통과 편집에서 60분까지 유효하니 오래 쉬었으면 다시 부르세요.',
     '남의 글이나 기계 생성물이면 NATIVE_OUTPUT_GATE=off 로 이 문을 엽니다.',
