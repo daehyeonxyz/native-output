@@ -2,7 +2,7 @@
 /**
  * 턴이 끝날 때 마지막 대화 응답을 금지 표현 목록과 대조한다.
  *
- * Stop 훅이다. 목록의 단일 원본은 data/packs/banned-words.json 으로,
+ * Stop 훅이다. 목록의 단일 원본은 standards/banned-words.json 으로,
  * Write·Edit 를 검사하는 native-output-gate.js 와 같은 목록을 쓴다.
  * 산출물만이 아니라 대화 응답에서도 측정으로 확정한 금지 표현을 막기 위해서다.
  *
@@ -11,13 +11,15 @@
  *   - stop_hook_active 면 통과시켜 반복 차단 루프를 막는다
  *   - 스크립트가 어떤 이유로든 실패하면 통과시킨다
  *
+ * 강도는 `NATIVE_OUTPUT_LEVEL` 이 정한다. `block`(기본)은 응답을 다시 쓰게 만들고
+ * `warn` 은 막지 않고 알리기만 한다.
  * `NATIVE_OUTPUT_GATE=off` 로 비활성화된다.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 
-const BANNED_LIST = path.join(__dirname, '..', 'data', 'packs', 'banned-words.json');
+const BANNED_LIST = path.join(__dirname, '..', '..', 'standards', 'banned-words.json');
 
 function pass() {
   process.exit(0);
@@ -85,10 +87,17 @@ function main() {
   if (hits.length === 0) pass();
 
   const lines = hits.map((one) => `"${one.word}" 대신 "${one.fix}"`);
+  const found = '마지막 응답에 금지 표현이 있습니다. ' + lines.join(' / ') + '.';
+
+  if ((process.env.NATIVE_OUTPUT_LEVEL || 'block').toLowerCase() === 'warn') {
+    process.stdout.write(JSON.stringify({ systemMessage: '[native-output] ' + found }));
+    process.exit(0);
+  }
+
   process.stdout.write(
     JSON.stringify({
       decision: 'block',
-      reason: '[native-output] 마지막 응답에 금지 표현이 있습니다. ' + lines.join(' / ') + '. 응답을 고쳐서 다시 내보내세요.',
+      reason: '[native-output] ' + found + ' 응답을 고쳐서 다시 내보내세요.',
     }),
   );
   process.exit(0);

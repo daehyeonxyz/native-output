@@ -11,11 +11,13 @@
  *   - 스크립트가 어떤 이유로든 실패하면 통과시킨다
  *
  * 마커 검사에 더해 금지 표현을 결정론으로 검사한다. 목록의 단일 원본은
- * 스킬 폴더의 data/packs/banned-words.json 이다. 스킬을 불렀어도 목록의 말이
+ * 스킬 폴더의 standards/banned-words.json 이다. 스킬을 불렀어도 목록의 말이
  * 들어 있으면 거부한다. 스킬 호출이 표현 준수를 보장하지 않는다.
  * 스킬 폴더 자신은 금지 표현을 인용으로 담으므로 이 검사에서 뺀다.
  *
- * `NATIVE_OUTPUT_GATE=off` 를 넣으면 이 문이 열린 채로 있는다.
+ * 강도는 `NATIVE_OUTPUT_LEVEL` 이 정한다. `block`(기본)은 거부하고 `warn` 은
+ * 막지 않고 알리기만 한다. 값은 setup 이 훅 명령 앞에 붙여 둔다.
+ * `NATIVE_OUTPUT_GATE=off` 를 넣으면 강도와 무관하게 이 문이 열린 채로 있는다.
  */
 
 const fs = require('node:fs');
@@ -24,15 +26,37 @@ const os = require('node:os');
 
 const DIR = path.join(os.homedir(), '.claude', '.native-output-loaded');
 const MARKER_FRESH_MS = 60 * 60 * 1000;
-const BANNED_LIST = path.join(__dirname, '..', 'data', 'packs', 'banned-words.json');
+const BANNED_LIST = path.join(__dirname, '..', '..', 'standards', 'banned-words.json');
 
 const TEXT_EXT = /\.(md|txt|ts|tsx|js|jsx|mjs|cjs|rs|py|toml|css|html|json|ya?ml)$/i;
 const SKIP = /(node_modules|[\\/]vendor[\\/]|[\\/]_archive[\\/]|[\\/]target[\\/]|[\\/]dist[\\/]|[\\/]build[\\/]|[\\/]\.git[\\/]|CHANGELOG|package-lock|pnpm-lock)/i;
 
-/* 금지 표현을 인용으로 담는 곳. 스킬 폴더 자신과 코퍼스는 검사하지 않는다. */
+/* 스킬 폴더 자신은 금지 표현을 인용으로 담으므로 검사하지 않는다. */
 const QUOTE_OK = /(native-output)/i;
 
 function pass() {
+  process.exit(0);
+}
+
+function warnOnly() {
+  return (process.env.NATIVE_OUTPUT_LEVEL || 'block').toLowerCase() === 'warn';
+}
+
+/* warn 강도에서는 막지 않고 사용자에게 알리기만 한다. */
+function report(reason) {
+  if (warnOnly()) {
+    process.stdout.write(JSON.stringify({ systemMessage: '[native-output] ' + reason }));
+    process.exit(0);
+  }
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: reason,
+      },
+    }),
+  );
   process.exit(0);
 }
 
@@ -74,23 +98,16 @@ function main() {
     const hits = banned.filter((one) => one.word && text.includes(one.word));
     if (hits.length > 0) {
       const lines = hits.map((one) => `  "${one.word}" 대신 "${one.fix}"`);
-      process.stdout.write(
-        JSON.stringify({
-          hookSpecificOutput: {
-            hookEventName: 'PreToolUse',
-            permissionDecision: 'deny',
-            permissionDecisionReason: [
-              '금지 표현이 들어 있습니다.',
-              '',
-              ...lines,
-              '',
-              '해당 문장을 실사용 어휘로 다시 쓰세요. 목록은 native-output 의 data/packs/banned-words.json 입니다.',
-              '인용 목적이면 NATIVE_OUTPUT_GATE=off 로 이 문을 엽니다.',
-            ].join('\n'),
-          },
-        }),
+      report(
+        [
+          '금지 표현이 들어 있습니다.',
+          '',
+          ...lines,
+          '',
+          '해당 문장을 실사용 어휘로 다시 쓰세요. 목록은 native-output 의 standards/banned-words.json 입니다.',
+          '인용 목적이면 NATIVE_OUTPUT_GATE=off 로 이 문을 엽니다.',
+        ].join('\n'),
       );
-      process.exit(0);
     }
   }
 
@@ -113,21 +130,13 @@ function main() {
     '',
     `한글 ${hangul}자 · ${path.basename(file)}`,
     '',
-    'Skill 도구로 native-output 을 부르고 장르 팩을 읽은 뒤에 쓰세요.',
+    'Skill 도구로 native-output 을 부르고 이 글의 종류에 맞는 기준을 읽은 뒤에 쓰세요.',
+    '사용자가 부르지 않아도 한국어를 쓸 때는 먼저 부릅니다.',
     '마커는 마지막 통과 편집에서 60분까지 유효하니 오래 쉬었으면 다시 부르세요.',
-    '고칠 글이 사용자 명의가 아니거나 기계 생성물이면 NATIVE_OUTPUT_GATE=off 로 이 문을 엽니다.',
+    '남의 글이나 기계 생성물이면 NATIVE_OUTPUT_GATE=off 로 이 문을 엽니다.',
   ].join('\n');
 
-  process.stdout.write(
-    JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: reason,
-      },
-    }),
-  );
-  process.exit(0);
+  report(reason);
 }
 
 main();
